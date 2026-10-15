@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Xml.Linq;
 using Barotrauma.Debugging;
 
+
 #if WINDOWS
 using SharpDX;
 #endif
@@ -18,12 +19,12 @@ using SharpDX;
 
 namespace Barotrauma
 {
+    
     /// <summary>
     /// The main class.
     /// </summary>
     public static class Program
     {
-
 #if LINUX
         /// <summary>
         /// Sets the required environment variables for the game to initialize Steamworks correctly.
@@ -38,6 +39,7 @@ namespace Barotrauma
         [STAThread]
         static void Main(string[] args)
         {
+            //AllocConsole();
             string executableDir = "";
 
 #if !DEBUG
@@ -56,6 +58,41 @@ namespace Barotrauma
                 newMessage: (s, c) => DebugConsole.NewMessage(s, c),
                 log: DebugConsole.Log);
             StoreIntegration.Init(ref args);
+
+            // Here we load our modding framework
+            try
+            {
+                Console.WriteLine("Loading BarotraumaModdingFramework.dll");
+
+                var assembly = System.Reflection.Assembly.LoadFrom("BarotraumaModdingFramework.dll");
+
+                if (assembly != null)
+                {
+                    Console.WriteLine("Successfully loaded BarotraumaModdingFramework.dll");
+
+                    var type = assembly.GetType("BarotraumaModdingFramework.Main");
+                    System.Reflection.MethodInfo method = type.GetMethod("Initialize", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+
+                    if (method != null)
+                    {
+                        method.Invoke(null, []);
+                        Console.WriteLine("Successfully Ran Initialize");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Failed to run Initialize becuase it is null");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Failed to load barotrauma modding framework");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in trying to load the mod: {ex}");
+            }
+
             EnableNvOptimus();
             Game = new GameMain(args);
             Game.Run();
